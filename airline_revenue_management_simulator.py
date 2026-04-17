@@ -361,10 +361,10 @@ with left:
     capacity    = st.number_input("Aircraft Capacity (Seats)", min_value=1, max_value=1000, value=150, step=1)
     vol_pct     = st.number_input("Leisure Volunteer Prob. (%)", min_value=0.0, max_value=100.0, value=1.5, step=0.1, format="%.1f",
                                    help="Each leisure pax who shows up has this chance of volunteering for a voucher.")
-    vdb_voucher = st.number_input("VDB Voucher Value ($)",  min_value=0.0, value=800.0,  step=50.0,
-                                  help="Voucher given to voluntary denied boardings.")
-    idb_cost    = st.number_input("IDB Cost ($)",           min_value=0.0, value=3000.0, step=100.0,
-                                  help="Total cost per involuntary denied boarding (voucher + goodwill loss).")
+    vdb_voucher = st.number_input("Voluntary Denied Boarding Voucher — VDB ($)", min_value=0.0, value=800.0, step=50.0,
+                                  help="Voucher given to passengers who voluntarily give up their seat.")
+    idb_cost    = st.number_input("Involuntary Denied Boarding Cost — IDB ($)", min_value=0.0, value=3000.0, step=100.0,
+                                  help="Total cost per passenger forcibly denied boarding (higher voucher + estimated goodwill loss).")
     st.divider()
 
     st.markdown('<div class="panel-title">⚙️ Simulation Settings</div>', unsafe_allow_html=True)
@@ -497,32 +497,49 @@ with right:
                 marker=dict(color="#1e88e5", opacity=0.8, line=dict(color="white", width=0.4)),
                 hovertemplate="Profit: $%{x:,.0f}<br>Count: %{y}<extra></extra>",
             ))
-            for v, lb, c in [
-                (res["mean_profit"], "Mean",  "#1e3a8a"),
-                (res["p5_profit"],   "P5",    "#ef4444"),
-                (res["p95_profit"],  "P95",   "#22c55e"),
-            ]:
-                fig.add_vline(x=v, line=dict(color=c, width=2, dash="dash"),
-                              annotation_text=f" {lb}=${v:,.0f}",
-                              annotation_font=dict(color=c, size=12, family="Outfit"))
-            fig.update_layout(**PLOT, height=320,
-                title=dict(text="Profit Distribution per Flight", font=dict(size=14, color="#1e3a8a")),
+            fig.add_vline(x=res["mean_profit"], line=dict(color="#1e3a8a", width=2, dash="dash"),
+                          annotation_text=f" Mean = ${res['mean_profit']:,.0f}",
+                          annotation_font=dict(color="#1e3a8a", size=12, family="Outfit"))
+            fig.update_layout(**PLOT, height=300,
+                title=dict(text="Profit Distribution per Flight (at Optimal Settings)", font=dict(size=14, color="#1e3a8a")),
                 xaxis=dict(title="Profit ($)", tickprefix="$", **NGRID, **TICK),
                 yaxis=dict(title="Number of Flights", **GRID, **TICK),
                 showlegend=False, bargap=0.03)
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-            # P5–P95 summary
+            # Percentile selector
+            pct_choice = st.selectbox(
+                "Select confidence level to view",
+                options=["95th percentile", "99th percentile"],
+                index=0,
+            )
+            pct_val = 95 if "95" in pct_choice else 99
+            pct_profit = float(np.percentile(profit, pct_val))
+
+            st.markdown(f"""
+            <div class="rec-banner" style="margin-top:12px">
+                <div class="rec-title">At {pct_val}% confidence — Profit: ${pct_profit:,.0f}</div>
+                <div class="rec-body">
+                    There is a <strong>{pct_val}%</strong> chance profit per flight is
+                    <strong>at most ${pct_profit:,.0f}</strong> at the optimal setting of
+                    <strong>{best_tt} total tickets</strong> with a leisure booking limit of
+                    <strong>{best_bl}</strong> (F1 reservation: <strong>{best_rl}</strong>).
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
             for lbl, val, fg in [
-                ("P5  (5th pctile — downside)",  f"${res['p5_profit']:,.0f}",  "#ef4444"),
-                ("Mean expected profit",          f"${res['mean_profit']:,.0f}","#1e3a8a"),
-                ("P95 (95th pctile — upside)",   f"${res['p95_profit']:,.0f}", "#22c55e"),
+                ("Mean expected profit",            f"${res['mean_profit']:,.0f}",                    "#1e3a8a"),
+                ("95th percentile profit",          f"${float(np.percentile(profit, 95)):,.0f}",      "#22c55e"),
+                ("99th percentile profit",          f"${float(np.percentile(profit, 99)):,.0f}",      "#16a34a"),
+                ("Optimal total tickets to sell",   f"{best_tt} tickets",                             "#1e88e5"),
+                ("Optimal leisure booking limit",   f"{best_bl} tickets (F1 reserve: {best_rl})",    "#1e88e5"),
             ]:
                 st.markdown(f"""
                 <div class="brow">
                     <span>{lbl}</span>
                     <span style="color:{fg};font-family:'JetBrains Mono',monospace;
-                                 font-weight:700;font-size:15px">{val}</span>
+                                 font-weight:700;font-size:14px">{val}</span>
                 </div>""", unsafe_allow_html=True)
 
         # ── TAB 2: Optimizer Grid ──────────────────────────────────
@@ -547,12 +564,12 @@ with right:
                     name="Optimal", showlegend=True,
                     hovertemplate=f"Optimal: TT={best_tt}, BL={best_bl}<extra></extra>",
                 ))
-                fig_h.update_layout(**PLOT, height=400,
-                    title=dict(text="Mean Profit Heatmap — Total Tickets × Booking Limit",
-                               font=dict(size=13, color="#1e3a8a")),
+                fig_h.update_layout(**PLOT, height=380,
+                    margin=dict(l=10, r=10, t=10, b=40),
                     xaxis=dict(title="Booking Limit for Leisure (F2)", **TICK),
                     yaxis=dict(title="Total Tickets to Sell", **TICK),
                     legend=dict(font=dict(size=12)))
+                st.markdown('<div class="sec-lbl">Mean Profit Heatmap — Total Tickets × Booking Limit &nbsp; ⭐ = Optimal</div>', unsafe_allow_html=True)
                 st.plotly_chart(fig_h, use_container_width=True, config={"displayModeBar": False})
 
                 # Profit line for best total_tickets level
@@ -578,11 +595,12 @@ with right:
                     fig2.add_vline(x=params["booking_limit"], line=dict(color="#f59e0b", width=2, dash="dash"),
                                    annotation_text=f" Current ({params['booking_limit']})",
                                    annotation_font=dict(color="#f59e0b", size=12, family="Outfit"))
-                    fig2.update_layout(**PLOT, height=260,
-                        title=dict(text=f"Profit vs Booking Limit (at Total Tickets = {best_tt})",
-                                   font=dict(size=13, color="#1e3a8a")),
+                    fig2.update_layout(**PLOT, height=240,
+                        margin=dict(l=10, r=10, t=10, b=40),
                         xaxis=dict(title="Booking Limit for Leisure (F2)", **NGRID, **TICK),
-                        yaxis=dict(title="Expected Profit ($)", tickprefix="$", **GRID, **TICK))
+                        yaxis=dict(title="Expected Profit ($)", tickprefix="$", **GRID, **TICK),
+                        legend=dict(font=dict(size=11)))
+                    st.markdown(f'<div class="sec-lbl">Profit vs Booking Limit at Total Tickets = {best_tt}</div>', unsafe_allow_html=True)
                     st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
         # ── TAB 3: Denied Boardings ────────────────────────────────
@@ -722,22 +740,30 @@ with right:
             c1, c2 = st.columns(2)
 
             with c1:
-                fig7 = go.Figure()
-                fig7.add_trace(go.Histogram(
-                    x=res["f1_sold"], nbinsx=30, name="F1 Sold",
-                    marker=dict(color="#1e88e5", opacity=0.75,
-                                line=dict(color="white", width=0.3))))
-                fig7.add_trace(go.Histogram(
-                    x=res["f2_sold"], nbinsx=30, name="F2 Sold",
-                    marker=dict(color="#22c55e", opacity=0.65,
-                                line=dict(color="white", width=0.3))))
-                fig7.update_layout(**PLOT, height=280, barmode="overlay",
-                    title=dict(text="Tickets Sold Distribution by Fare Class",
-                               font=dict(size=13, color="#1e3a8a")),
-                    xaxis=dict(title="Tickets Sold", **NGRID, **TICK),
+                st.markdown('<div class="sec-lbl">F1 Business Tickets Sold</div>', unsafe_allow_html=True)
+                fig7a = go.Figure()
+                fig7a.add_trace(go.Histogram(
+                    x=res["f1_sold"], nbinsx=25, name="F1 Sold",
+                    marker=dict(color="#1e88e5", opacity=0.82,
+                                line=dict(color="white", width=0.4))))
+                fig7a.update_layout(**PLOT, height=240, margin=dict(l=10, r=10, t=10, b=40),
+                    xaxis=dict(title="F1 Tickets Sold", **NGRID, **TICK),
                     yaxis=dict(title="Frequency", **GRID, **TICK),
-                    legend=dict(font=dict(size=12)))
-                st.plotly_chart(fig7, use_container_width=True, config={"displayModeBar": False})
+                    showlegend=False)
+                st.plotly_chart(fig7a, use_container_width=True, config={"displayModeBar": False})
+
+            with c2:
+                st.markdown('<div class="sec-lbl">F2 Leisure Tickets Sold</div>', unsafe_allow_html=True)
+                fig7b = go.Figure()
+                fig7b.add_trace(go.Histogram(
+                    x=res["f2_sold"], nbinsx=25, name="F2 Sold",
+                    marker=dict(color="#22c55e", opacity=0.82,
+                                line=dict(color="white", width=0.4))))
+                fig7b.update_layout(**PLOT, height=240, margin=dict(l=10, r=10, t=10, b=40),
+                    xaxis=dict(title="F2 Tickets Sold", **NGRID, **TICK),
+                    yaxis=dict(title="Frequency", **GRID, **TICK),
+                    showlegend=False)
+                st.plotly_chart(fig7b, use_container_width=True, config={"displayModeBar": False})
 
             with c2:
                 # Load factor distribution
@@ -750,18 +776,18 @@ with right:
                     hovertemplate="Load Factor: %{x:.1f}%<br>Count: %{y}<extra></extra>",
                 ))
                 fig8.add_vline(x=100, line=dict(color="#ef4444", width=2, dash="dash"),
-                               annotation_text=" 100% (capacity)",
+                               annotation_text=" 100% capacity",
                                annotation_font=dict(color="#ef4444", size=11, family="Outfit"))
-                fig8.update_layout(**PLOT, height=280,
-                    title=dict(text="Load Factor Distribution (% of Seats Filled)",
-                               font=dict(size=13, color="#1e3a8a")),
+                fig8.update_layout(**PLOT, height=240, margin=dict(l=10, r=10, t=10, b=40),
                     xaxis=dict(title="Load Factor (%)", ticksuffix="%", **NGRID, **TICK),
                     yaxis=dict(title="Frequency", **GRID, **TICK),
                     showlegend=False)
+                st.markdown('<div class="sec-lbl">Load Factor Distribution (% Seats Filled)</div>', unsafe_allow_html=True)
                 st.plotly_chart(fig8, use_container_width=True, config={"displayModeBar": False})
 
             # Showed-up vs capacity
             st.markdown("<hr>", unsafe_allow_html=True)
+            st.markdown('<div class="sec-lbl">Total Show-Ups vs Aircraft Capacity</div>', unsafe_allow_html=True)
             fig9 = go.Figure()
             fig9.add_trace(go.Histogram(
                 x=res["total_showed"], nbinsx=45,
@@ -772,9 +798,7 @@ with right:
             fig9.add_vline(x=int(capacity), line=dict(color="#ef4444", width=2, dash="dash"),
                            annotation_text=f" Capacity ({int(capacity)})",
                            annotation_font=dict(color="#ef4444", size=12, family="Outfit"))
-            fig9.update_layout(**PLOT, height=220,
-                title=dict(text="Total Show-Ups vs Aircraft Capacity",
-                           font=dict(size=13, color="#1e3a8a")),
+            fig9.update_layout(**PLOT, height=220, margin=dict(l=10, r=10, t=10, b=40),
                 xaxis=dict(title="Total Passengers Who Showed Up", **NGRID, **TICK),
                 yaxis=dict(title="Frequency", **GRID, **TICK),
                 showlegend=False)
