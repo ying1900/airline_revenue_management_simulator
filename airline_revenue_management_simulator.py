@@ -510,21 +510,19 @@ with right:
             p95_profit = float(np.percentile(profit, 95))
             p99_profit = float(np.percentile(profit, 99))
 
-            for lbl, val, note, fg in [
-                ("Mean expected profit",          f"${res['mean_profit']:,.0f}", "",                                                           "#1e3a8a"),
-                ("95th percentile profit",        f"${p95_profit:,.0f}",        "Only 5% of flights earn more than this",                      "#22c55e"),
-                ("99th percentile profit",        f"${p99_profit:,.0f}",        "Only 1% of flights earn more than this",                      "#16a34a"),
-                ("Optimal total tickets to sell", f"{best_tt} tickets",         "",                                                            "#1e88e5"),
-                ("Optimal leisure booking limit", f"{best_bl} (F1 reserve: {best_rl})", "",                                                    "#1e88e5"),
-            ]:
+            rows = [
+                ("Mean expected profit",          f"${res['mean_profit']:,.0f}", "",                                    "#1e3a8a"),
+                ("95th percentile profit",        f"${p95_profit:,.0f}",         "Only 5% of flights earn more than this", "#22c55e"),
+                ("99th percentile profit",        f"${p99_profit:,.0f}",         "Only 1% of flights earn more than this", "#16a34a"),
+                ("Optimal total tickets to sell", f"{best_tt} tickets",          "",                                    "#1e88e5"),
+                ("Optimal leisure booking limit", f"{best_bl} (F1 reserve: {best_rl})", "",                            "#1e88e5"),
+            ]
+            for lbl, val, note, fg in rows:
+                note_html = f'<div style="font-size:11px;color:#94a3b8;margin-top:2px">{note}</div>' if note else ''
                 st.markdown(f"""
                 <div class="brow">
-                    <div>
-                        <div>{lbl}</div>
-                        {"<div style='font-size:11px;color:#94a3b8;margin-top:2px'>" + note + "</div>" if note else ""}
-                    </div>
-                    <span style="color:{fg};font-family:'JetBrains Mono',monospace;
-                                 font-weight:700;font-size:14px">{val}</span>
+                    <div><div>{lbl}</div>{note_html}</div>
+                    <span style="color:{fg};font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px">{val}</span>
                 </div>""", unsafe_allow_html=True)
 
         # ── TAB 2: Optimizer Grid ──────────────────────────────────
