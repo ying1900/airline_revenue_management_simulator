@@ -507,37 +507,22 @@ with right:
                 showlegend=False, bargap=0.03)
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-            # Percentile selector
-            pct_choice = st.selectbox(
-                "Select confidence level to view",
-                options=["95th percentile", "99th percentile"],
-                index=0,
-            )
-            pct_val = 95 if "95" in pct_choice else 99
-            pct_profit = float(np.percentile(profit, pct_val))
+            p95_profit = float(np.percentile(profit, 95))
+            p99_profit = float(np.percentile(profit, 99))
 
-            st.markdown(f"""
-            <div class="rec-banner" style="margin-top:12px">
-                <div class="rec-title">At {pct_val}% confidence — Profit: ${pct_profit:,.0f}</div>
-                <div class="rec-body">
-                    There is a <strong>{pct_val}%</strong> chance profit per flight is
-                    <strong>at most ${pct_profit:,.0f}</strong> at the optimal setting of
-                    <strong>{best_tt} total tickets</strong> with a leisure booking limit of
-                    <strong>{best_bl}</strong> (F1 reservation: <strong>{best_rl}</strong>).
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            for lbl, val, fg in [
-                ("Mean expected profit",            f"${res['mean_profit']:,.0f}",                    "#1e3a8a"),
-                ("95th percentile profit",          f"${float(np.percentile(profit, 95)):,.0f}",      "#22c55e"),
-                ("99th percentile profit",          f"${float(np.percentile(profit, 99)):,.0f}",      "#16a34a"),
-                ("Optimal total tickets to sell",   f"{best_tt} tickets",                             "#1e88e5"),
-                ("Optimal leisure booking limit",   f"{best_bl} tickets (F1 reserve: {best_rl})",    "#1e88e5"),
+            for lbl, val, note, fg in [
+                ("Mean expected profit",          f"${res['mean_profit']:,.0f}", "",                                                           "#1e3a8a"),
+                ("95th percentile profit",        f"${p95_profit:,.0f}",        "Only 5% of flights earn more than this",                      "#22c55e"),
+                ("99th percentile profit",        f"${p99_profit:,.0f}",        "Only 1% of flights earn more than this",                      "#16a34a"),
+                ("Optimal total tickets to sell", f"{best_tt} tickets",         "",                                                            "#1e88e5"),
+                ("Optimal leisure booking limit", f"{best_bl} (F1 reserve: {best_rl})", "",                                                    "#1e88e5"),
             ]:
                 st.markdown(f"""
                 <div class="brow">
-                    <span>{lbl}</span>
+                    <div>
+                        <div>{lbl}</div>
+                        {"<div style='font-size:11px;color:#94a3b8;margin-top:2px'>" + note + "</div>" if note else ""}
+                    </div>
                     <span style="color:{fg};font-family:'JetBrains Mono',monospace;
                                  font-weight:700;font-size:14px">{val}</span>
                 </div>""", unsafe_allow_html=True)
