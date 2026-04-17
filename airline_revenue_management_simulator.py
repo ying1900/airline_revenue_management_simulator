@@ -564,8 +564,8 @@ with right:
                     name="Optimal", showlegend=True,
                     hovertemplate=f"Optimal: TT={best_tt}, BL={best_bl}<extra></extra>",
                 ))
-                fig_h.update_layout(**PLOT, height=380,
-                    margin=dict(l=10, r=10, t=10, b=40),
+                fig_h.update_layout(**{**PLOT, "margin": dict(l=10, r=10, t=10, b=40)},
+                    height=380,
                     xaxis=dict(title="Booking Limit for Leisure (F2)", **TICK),
                     yaxis=dict(title="Total Tickets to Sell", **TICK),
                     legend=dict(font=dict(size=12)))
@@ -595,8 +595,7 @@ with right:
                     fig2.add_vline(x=params["booking_limit"], line=dict(color="#f59e0b", width=2, dash="dash"),
                                    annotation_text=f" Current ({params['booking_limit']})",
                                    annotation_font=dict(color="#f59e0b", size=12, family="Outfit"))
-                    fig2.update_layout(**PLOT, height=240,
-                        margin=dict(l=10, r=10, t=10, b=40),
+                    fig2.update_layout(**{**PLOT, "margin": dict(l=10, r=10, t=10, b=40)}, height=240,
                         xaxis=dict(title="Booking Limit for Leisure (F2)", **NGRID, **TICK),
                         yaxis=dict(title="Expected Profit ($)", tickprefix="$", **GRID, **TICK),
                         legend=dict(font=dict(size=11)))
@@ -746,7 +745,7 @@ with right:
                     x=res["f1_sold"], nbinsx=25, name="F1 Sold",
                     marker=dict(color="#1e88e5", opacity=0.82,
                                 line=dict(color="white", width=0.4))))
-                fig7a.update_layout(**PLOT, height=240, margin=dict(l=10, r=10, t=10, b=40),
+                fig7a.update_layout(**{**PLOT, "margin": dict(l=10, r=10, t=10, b=40)}, height=240,
                     xaxis=dict(title="F1 Tickets Sold", **NGRID, **TICK),
                     yaxis=dict(title="Frequency", **GRID, **TICK),
                     showlegend=False)
@@ -759,7 +758,7 @@ with right:
                     x=res["f2_sold"], nbinsx=25, name="F2 Sold",
                     marker=dict(color="#22c55e", opacity=0.82,
                                 line=dict(color="white", width=0.4))))
-                fig7b.update_layout(**PLOT, height=240, margin=dict(l=10, r=10, t=10, b=40),
+                fig7b.update_layout(**{**PLOT, "margin": dict(l=10, r=10, t=10, b=40)}, height=240,
                     xaxis=dict(title="F2 Tickets Sold", **NGRID, **TICK),
                     yaxis=dict(title="Frequency", **GRID, **TICK),
                     showlegend=False)
@@ -778,7 +777,7 @@ with right:
                 fig8.add_vline(x=100, line=dict(color="#ef4444", width=2, dash="dash"),
                                annotation_text=" 100% capacity",
                                annotation_font=dict(color="#ef4444", size=11, family="Outfit"))
-                fig8.update_layout(**PLOT, height=240, margin=dict(l=10, r=10, t=10, b=40),
+                fig8.update_layout(**{**PLOT, "margin": dict(l=10, r=10, t=10, b=40)}, height=240,
                     xaxis=dict(title="Load Factor (%)", ticksuffix="%", **NGRID, **TICK),
                     yaxis=dict(title="Frequency", **GRID, **TICK),
                     showlegend=False)
@@ -798,7 +797,7 @@ with right:
             fig9.add_vline(x=int(capacity), line=dict(color="#ef4444", width=2, dash="dash"),
                            annotation_text=f" Capacity ({int(capacity)})",
                            annotation_font=dict(color="#ef4444", size=12, family="Outfit"))
-            fig9.update_layout(**PLOT, height=220, margin=dict(l=10, r=10, t=10, b=40),
+            fig9.update_layout(**{**PLOT, "margin": dict(l=10, r=10, t=10, b=40)}, height=220,
                 xaxis=dict(title="Total Passengers Who Showed Up", **NGRID, **TICK),
                 yaxis=dict(title="Frequency", **GRID, **TICK),
                 showlegend=False)
